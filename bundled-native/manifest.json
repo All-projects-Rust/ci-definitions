@@ -157,8 +157,8 @@
     },
     {
       "path": "scripts/permission-registry/prepare-history-git-parents.mjs",
-      "sha256": "c5099c5e2ef18b3fa83882c18fd065f5183513edcf1f0736370b5bbf211764aa",
-      "bytes": 16568,
+      "sha256": "6141659fdda2ebeba10155c65259e6eebb6b8a9cf1624b4334385d8a81c8700b",
+      "bytes": 16861,
       "imports": [
         "./history-revision-io.mjs",
         "./ledger-format.mjs",
@@ -325,5 +325,5 @@
     "typescript"
   ],
   "count": 27,
-  "totalBytes": 648052
+  "totalBytes": 648345
 }

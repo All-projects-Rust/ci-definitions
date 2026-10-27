@@ -181,6 +181,10 @@ export function retainStructuralTailGitParents(root, merge, { createOnly = false
 export function retainSealedSnapshotGitParent(root, revision, { createOnly = false } = {}) {
   const reader = openInstalledHistoryReader(resolve(root));
   if (reader) revision = reader.classifyPhysicalRevision(revision);
+  return retainSnapshotGitParent(root, revision, createOnly, reader);
+}
+
+function retainSnapshotGitParent(root, revision, createOnly, reader) {
   const ref = reader ? reader.cleanRetentionRef(revision) : historyRetentionRef(revision);
   const physical = reader ? reader.resolveReceiptRevision(revision).physicalRevision : revision;
   const { git } = boundedGit(reader?.cleanStoreRoot ?? root);
@@ -196,9 +200,12 @@ export function retainSealedSnapshotGitParent(root, revision, { createOnly = fal
   return { revision, ref, missing: remaining };
 }
 
-/** Publisher precondition only: never creates or repairs remote references. */
+/** Receipt revisions are logical identities, unlike the physical CLI selector.
+ * Publisher precondition only: never creates or repairs remote references.
+ */
 export function assertSealedSnapshotGitRetention(root, revision) {
-  if (retainSealedSnapshotGitParent(root, revision).missing.length) refuse();
+  const reader = openInstalledHistoryReader(resolve(root));
+  if (retainSnapshotGitParent(root, revision, false, reader).missing.length) refuse();
 }
 
 export function prepareHistoryGitParents(root, revisions = []) {
