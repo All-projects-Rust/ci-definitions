@@ -21,3 +21,17 @@ jobs:
         run: |
           python3 -I -B -m unittest discover -s tests -p 'test_*.py' -v
           python3 -I -O -B -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Setup verifier Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+      - name: Install locked verifier dependency without scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify trusted bundle and negative contracts
+        run: |
+          if ! command -v bwrap >/dev/null 2>&1; then
+            sudo -n apt-get update
+            sudo -n apt-get install --yes --no-install-recommends bubblewrap
+          fi
+          node --input-type=module -e 'import {verifyTrustedBundle} from "./trusted-history/bundle-integrity.mjs"; verifyTrustedBundle(process.cwd()+"/bundled-native");'
+          node --test trusted-history/*.spec.mjs

@@ -1,0 +1,136 @@
+name: Trusted permission history definition
+on:
+  workflow_call:
+    inputs:
+      expected_source_sha:
+        description: Exact intrinsic caller SHA, never a caller-selected base or trust profile
+        required: true
+        type: string
+permissions:
+  contents: read
+
+jobs:
+  history:
+    name: History integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Bind intrinsic helper and caller identities before checkout
+        id: identity
+        env:
+          DEFINITION: ${{ toJSON(job) }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+          OWNER_ID: ${{ github.repository_owner_id }}
+          EVENT: ${{ github.event_name }}
+          SOURCE_SHA: ${{ github.sha }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+          EVENT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || '' }}
+          PHASE: ${{ vars.HISTORY_REDACTION_PHASE }}
+          DESCRIPTOR_SHA256: ${{ vars.HISTORY_REDACTION_DESCRIPTOR_SHA256 }}
+          DESCRIPTOR_B64: ${{ vars.HISTORY_REDACTION_DESCRIPTOR_B64 }}
+        run: |
+          python3 -I - <<'PY'
+          import base64, hashlib, json, os, re
+          e = os.environ
+          assert (e['REPOSITORY'], e['OWNER_ID']) in {
+              ('signalorust/signalo', '345015266'),
+              ('All-projects-Rust/signalo', '348736467'),
+          }
+          assert e['REPOSITORY_ID'] == '1201945594'
+          assert e['EVENT'] in ('pull_request', 'merge_group', 'workflow_dispatch')
+          assert re.fullmatch(r'[a-f0-9]{40}', e['SOURCE_SHA'])
+          assert e['EXPECTED_SOURCE_SHA'] == e['SOURCE_SHA']
+          d = json.loads(e['DEFINITION'])
+          host = 'All-projects-Rust/ci-definitions'
+          path = '.github/workflows/history-redaction-verify.yml'
+          assert d.get('workflow_repository') == host
+          assert d.get('workflow_file_path') == path
+          assert re.fullmatch(r'[a-f0-9]{40}', d.get('workflow_sha', ''))
+          assert d.get('workflow_ref') == host + '/' + path + '@' + d['workflow_sha']
+          assert e['PHASE'] in ('legacy', 'active')
+          installation = None
+          if e['PHASE'] == 'legacy':
+              assert e['DESCRIPTOR_SHA256'] == e['DESCRIPTOR_B64'] == ''
+          else:
+              assert re.fullmatch(r'[a-f0-9]{64}', e['DESCRIPTOR_SHA256'])
+              assert 0 < len(e['DESCRIPTOR_B64']) <= 87384
+              raw = base64.b64decode(e['DESCRIPTOR_B64'], validate=True)
+              assert 0 < len(raw) <= 65536
+              assert base64.b64encode(raw).decode() == e['DESCRIPTOR_B64']
+              assert hashlib.sha256(raw).hexdigest() == e['DESCRIPTOR_SHA256']
+              installation = json.loads(raw)
+          if e['EVENT'] == 'workflow_dispatch':
+              assert installation is not None
+              assert e['EVENT_BASE_SHA'] == ''
+              assert installation['finalPublicationTip'] == e['SOURCE_SHA']
+              assert re.fullmatch(r'[a-f0-9]{40}', installation['trust']['cleanAnchor'])
+          else:
+              assert re.fullmatch(r'[a-f0-9]{40}', e['EVENT_BASE_SHA'])
+          with open(e['GITHUB_OUTPUT'], 'a', encoding='utf8') as output:
+              output.write('definition_sha=' + d['workflow_sha'] + '\n')
+          PY
+      - name: Checkout immutable verifier definition
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: All-projects-Rust/ci-definitions
+          ref: ${{ steps.identity.outputs.definition_sha }}
+          path: trusted-helper
+          persist-credentials: false
+          fetch-depth: 1
+          submodules: false
+          lfs: false
+      - name: Setup trusted Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+      - name: Install only locked verifier dependency without scripts or caches
+        working-directory: trusted-helper
+        run: |
+          node_dir="$(dirname "$(command -v node)")"
+          config_dir="$(mktemp -d "$RUNNER_TEMP/trusted-history-config.XXXXXX")"
+          : > "$config_dir/user.npmrc"
+          : > "$config_dir/global.npmrc"
+          env -i PATH="$node_dir:/usr/bin:/bin" HOME="$RUNNER_TEMP" NPM_CONFIG_USERCONFIG="$config_dir/user.npmrc" NPM_CONFIG_GLOBALCONFIG="$config_dir/global.npmrc" npm ci --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org --cache="$RUNNER_TEMP/trusted-history-npm"
+      - name: Checkout exact caller bytes as data
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: false
+          filter: ""
+          submodules: false
+          lfs: false
+      - name: Verify signed history and current permission sources with trusted code
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HISTORY_CONTEXT: >-
+            {"repository":${{ toJSON(github.repository) }},"repositoryId":${{ toJSON(github.repository_id) }},"ownerId":${{ toJSON(github.repository_owner_id) }},"event":${{ toJSON(github.event_name) }},"sourceSha":${{ toJSON(github.sha) }},"requestedSourceSha":${{ toJSON(inputs.expected_source_sha) }},"eventBaseSha":${{ toJSON(github.event.pull_request.base.sha || github.event.merge_group.base_sha || '') }},"phase":${{ toJSON(vars.HISTORY_REDACTION_PHASE) }},"descriptorSha256":${{ toJSON(vars.HISTORY_REDACTION_DESCRIPTOR_SHA256) }}}
+          HISTORY_DEFINITION: ${{ toJSON(job) }}
+          HISTORY_DESCRIPTOR_B64: ${{ vars.HISTORY_REDACTION_DESCRIPTOR_B64 }}
+        run: |
+          umask 077
+          node_binary="$(command -v node)"
+          env -i PATH=/usr/bin:/bin HOME="$RUNNER_TEMP" GITHUB_WORKSPACE="$GITHUB_WORKSPACE" GH_TOKEN="$GH_TOKEN" HISTORY_CONTEXT="$HISTORY_CONTEXT" HISTORY_DEFINITION="$HISTORY_DEFINITION" HISTORY_DESCRIPTOR_B64="$HISTORY_DESCRIPTOR_B64" "$node_binary" trusted-helper/trusted-history/ci-verify.mjs > "$RUNNER_TEMP/history-stage-a-receipt.json"
+          cat "$RUNNER_TEMP/history-stage-a-receipt.json"
+      - name: Prepare official OS isolation for the runtime acceptance child
+        run: |
+          if ! command -v bwrap >/dev/null 2>&1; then
+            sudo -n apt-get update
+            sudo -n apt-get install --yes --no-install-recommends bubblewrap
+          fi
+          test "$(command -v bwrap)" = /usr/bin/bwrap
+      # Stage A never executes candidate code. Only this subsequent, isolated
+      # runtime regression exercises the nine actual API contract files.
+      - name: Accept current runtime permission bindings after trusted verification
+        env:
+          HISTORY_CONTEXT: >-
+            {"repository":${{ toJSON(github.repository) }},"repositoryId":${{ toJSON(github.repository_id) }},"ownerId":${{ toJSON(github.repository_owner_id) }},"event":${{ toJSON(github.event_name) }},"sourceSha":${{ toJSON(github.sha) }},"requestedSourceSha":${{ toJSON(inputs.expected_source_sha) }},"eventBaseSha":${{ toJSON(github.event.pull_request.base.sha || github.event.merge_group.base_sha || '') }},"phase":${{ toJSON(vars.HISTORY_REDACTION_PHASE) }},"descriptorSha256":${{ toJSON(vars.HISTORY_REDACTION_DESCRIPTOR_SHA256) }}}
+          HISTORY_DEFINITION: ${{ toJSON(job) }}
+          HISTORY_DESCRIPTOR_B64: ${{ vars.HISTORY_REDACTION_DESCRIPTOR_B64 }}
+        run: |
+          node_binary="$(command -v node)"
+          env -i PATH=/usr/bin:/bin HOME="$RUNNER_TEMP" RUNNER_TEMP="$RUNNER_TEMP" GITHUB_WORKSPACE="$GITHUB_WORKSPACE" HISTORY_CONTEXT="$HISTORY_CONTEXT" HISTORY_DEFINITION="$HISTORY_DEFINITION" HISTORY_DESCRIPTOR_B64="$HISTORY_DESCRIPTOR_B64" "$node_binary" trusted-helper/trusted-history/runtime-binding-acceptance.mjs
