@@ -1,0 +1,140 @@
+name: Canonical required API compiler stable definition
+on:
+  workflow_call:
+    inputs:
+      expected_source_sha:
+        description: Intrinsic caller SHA; exact original CI checkout context
+        required: true
+        type: string
+      force_hosted:
+        description: Explicit ci-hosted fallback; unknown callers default hosted
+        required: false
+        type: boolean
+        default: true
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+  # Minimal env so builds don't crash on missing vars. Real secrets live
+  # in the deploy job (OPS-002, future). These are placeholder-safe.
+  NODE_ENV: test
+  WIDGET_SESSION_SECRET: ci-widget-session-secret-placeholder-0000000000000000
+  WIDGET_IDENTITY_SECRET: ci-widget-identity-secret-placeholder-000000000000000000000000000000000
+  DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+  ADMIN_JWT_SECRET: ci-admin-jwt-secret-placeholder
+  JWT_SECRET: ci-user-jwt-secret-placeholder
+
+jobs:
+  compiler:
+    name: Compiler regressions
+    runs-on: ${{ vars.W10_REQUIRED_COMPILER_KVM == '1' && !inputs.force_hosted && github.repository == 'All-projects-Rust/signalo' && github.repository_id == '1201945594' && github.repository_owner_id == '348736467' && fromJSON(format('["signalo-w10-required-compiler-{0}-{1}"]', github.run_id, github.run_attempt)) || 'ubuntu-latest' }}
+    # PR1920 attempts 1/2 exhausted 30m after all 41 coverage regressions
+    # passed; retain every original compiler step with room for core/sandbox.
+    timeout-minutes: 45
+    steps:
+      - name: Prove canonical definition and exact caller source before checkout
+        env:
+          DEFINITION: ${{ toJSON(job) }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+          ACTUAL_SOURCE_SHA: ${{ github.sha }}
+          EVENT: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+          OWNER_ID: ${{ github.repository_owner_id }}
+          KVM: ${{ vars.W10_REQUIRED_COMPILER_KVM == '1' && !inputs.force_hosted && github.repository == 'All-projects-Rust/signalo' && github.repository_id == '1201945594' && github.repository_owner_id == '348736467' }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, re, socket, subprocess
+          e = os.environ
+          # Caller repository identity is separate from immutable definition identity.
+          assert (e['REPOSITORY'], e['OWNER_ID']) in {
+              ('signalorust/signalo', '345015266'),
+              ('All-projects-Rust/signalo', '348736467'),
+          }
+          assert e['REPOSITORY_ID'] == '1201945594'
+          assert e['EVENT'] in ('pull_request', 'merge_group', 'workflow_dispatch')
+          assert re.fullmatch(r'[0-9a-f]{40}', e['EXPECTED_SOURCE_SHA']) and e['EXPECTED_SOURCE_SHA'] == e['ACTUAL_SOURCE_SHA']
+          job = json.loads(e['DEFINITION'])
+          definition_repository = 'All-projects-Rust/ci-definitions'
+          path = definition_repository + '/.github/workflows/w10-required-api-compiler-migration.yml'
+          assert job.get('workflow_repository') == definition_repository
+          assert job.get('workflow_file_path') == '.github/workflows/w10-required-api-compiler-migration.yml'
+          assert re.fullmatch(r'[0-9a-f]{40}', job.get('workflow_sha', ''))
+          ref = job.get('workflow_ref', '')
+          assert ref == path + '@' + job['workflow_sha']
+          # Exact N, helper numeric ID and blob digest are pinned externally after publication.
+          # A workflow cannot embed its own commit N without a hash fixed-point.
+          assert e['KVM'] in ('true', 'false')
+          if e['KVM'] == 'true':
+              assert socket.gethostname() == 'signalo-w10-offline1'
+              assert not any(pathlib.Path(p).exists() for p in ('/home/bb', '/home/gha-runner', '/var/lib/signalo-ci-fleet'))
+              mounts = subprocess.run(['mount'], capture_output=True, check=True, text=True).stdout
+              assert not re.search(r'type (9p|virtiofs|fuse.sshfs) ', mounts)
+          PY
+      - name: Checkout exact caller source without persisted credentials
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.expected_source_sha }}
+          persist-credentials: false
+
+      - name: Required disposable compiler admission contracts
+        run: python3 -m unittest discover -s scripts/tests -p test_w10_required_compiler_controller.py
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache/restore@v6
+        with:
+          # Some deps land in a workspace's own node_modules instead of
+          # hoisting to root (npm's resolver decides per-conflict) — a
+          # real miss here silently skips creating that nested dir on a
+          # cache hit, since "Install dependencies" below never runs
+          # (caught live: apps/web/node_modules/@vitejs/plugin-react,
+          # PR210 run 34067995689).
+          path: |
+            node_modules
+            apps/*/node_modules
+            apps/desktop/native-addons/shm-bridge/node_modules
+            packages/*/node_modules
+            workers/*/node_modules
+          key: trusted-main-node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Restore trusted npm download cache on dependency-tree miss
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.npm
+          key: trusted-main-npm-${{ runner.os }}-${{ hashFiles('package-lock.json', 'workers/media-auth/package-lock.json') }}
+          restore-keys: |
+            trusted-main-npm-${{ runner.os }}-
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci --ignore-scripts
+        env:
+          HUSKY: "0"
+
+      # Same package/client prerequisites as the former runtime-shard steps.
+      # This job only compiles: it provisions no PostgreSQL and runs no migrations.
+      - name: Build packages/*
+        run: npm run build -w @video/coaching-knowledge -w @video/job-bus -w @signalo/mcp-server -w @video/redaction -w @video/rubric-templates -w @video/schemas -w @video/shared-types -w @video/personal-channel-runtime
+
+      - name: Generate Prisma client
+        run: npx prisma generate --schema=apps/api/prisma/schema.prisma
+
+      - name: API typecheck shard coverage regression
+        run: node --test scripts/tests/api-typecheck-shards.test.mjs
+
+      # These are three separate original Programs, with their own unchanged
+      # options/context: production, scripts-production and explicit deploy roots.
+      # All original test Programs stay in the parallel API typecheck cell.
+      - name: Required original API source and deploy typecheck
+        run: node scripts/api-typecheck.mjs --ci-part=core
+
+      - name: Required SIG-927 sandbox typecheck
+        run: npm run sig927-sandbox:typecheck -w @video/api
