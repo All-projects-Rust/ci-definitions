@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import {
   decodeCIProfile,
   ciAttestationDirectory,
@@ -41,6 +42,47 @@ test("legacy phase is explicit and cannot silently load descriptor data", () => 
       verifier,
     ),
   );
+});
+test("both real workflow contexts normalize an absent descriptor before the strict profile decoder", () => {
+  // The first live caller emitted JSON null for the missing SHA variable.
+  const missingDescriptor = { phase: "legacy", descriptorSha256: null };
+  assert.throws(() => decodeCIProfile(missingDescriptor, "", verifier));
+  const workflow = readFileSync(
+    new URL(
+      "../.github/workflows/history-redaction-verify.yml",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const expressions = [
+    ...workflow.matchAll(
+      /"descriptorSha256":\$\{\{ toJSON\((vars\.HISTORY_REDACTION_DESCRIPTOR_SHA256(?: \|\| '')?)\) \}\}/gu,
+    ),
+  ];
+  assert.equal(expressions.length, 2);
+  for (const [, expression] of expressions) {
+    // Interpret only this finite variable/default expression, never workflow code.
+    const [variable, fallback] = expression.split(" || ");
+    assert.equal(variable, "vars.HISTORY_REDACTION_DESCRIPTOR_SHA256");
+    assert.ok(fallback === undefined || fallback === "''");
+    const emitted =
+      fallback === "''"
+        ? missingDescriptor.descriptorSha256 || ""
+        : missingDescriptor.descriptorSha256;
+    const context = JSON.parse(
+      JSON.stringify({ ...missingDescriptor, descriptorSha256: emitted }),
+    );
+    assert.equal(decodeCIProfile(context, "", verifier), null);
+    for (const phase of [null, "", "active"])
+      assert.throws(() => decodeCIProfile({ ...context, phase }, "", verifier));
+    assert.throws(() => decodeCIProfile(context, "candidate", verifier));
+  }
+});
+test("missing or malformed active descriptor SHA still fails closed", () => {
+  for (const descriptorSha256 of [null, "", "not-a-digest", "a".repeat(63)])
+    assert.throws(() =>
+      decodeCIProfile({ phase: "active", descriptorSha256 }, "", verifier),
+    );
 });
 test("exact administrative profile data binds fixed locations and verifier bytes; no signature proof claimed", () => {
   const { context, value } = encoded(profile());

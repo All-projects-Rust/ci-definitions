@@ -108,7 +108,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           HISTORY_CONTEXT: >-
-            {"repository":${{ toJSON(github.repository) }},"repositoryId":${{ toJSON(github.repository_id) }},"ownerId":${{ toJSON(github.repository_owner_id) }},"event":${{ toJSON(github.event_name) }},"sourceSha":${{ toJSON(github.sha) }},"requestedSourceSha":${{ toJSON(inputs.expected_source_sha) }},"eventBaseSha":${{ toJSON(github.event.pull_request.base.sha || github.event.merge_group.base_sha || '') }},"phase":${{ toJSON(vars.HISTORY_REDACTION_PHASE) }},"descriptorSha256":${{ toJSON(vars.HISTORY_REDACTION_DESCRIPTOR_SHA256) }}}
+            {"repository":${{ toJSON(github.repository) }},"repositoryId":${{ toJSON(github.repository_id) }},"ownerId":${{ toJSON(github.repository_owner_id) }},"event":${{ toJSON(github.event_name) }},"sourceSha":${{ toJSON(github.sha) }},"requestedSourceSha":${{ toJSON(inputs.expected_source_sha) }},"eventBaseSha":${{ toJSON(github.event.pull_request.base.sha || github.event.merge_group.base_sha || '') }},"phase":${{ toJSON(vars.HISTORY_REDACTION_PHASE) }},"descriptorSha256":${{ toJSON(vars.HISTORY_REDACTION_DESCRIPTOR_SHA256 || '') }}}
           HISTORY_DEFINITION: ${{ toJSON(job) }}
           HISTORY_DESCRIPTOR_B64: ${{ vars.HISTORY_REDACTION_DESCRIPTOR_B64 }}
         run: |
@@ -128,7 +128,7 @@ jobs:
       - name: Accept current runtime permission bindings after trusted verification
         env:
           HISTORY_CONTEXT: >-
-            {"repository":${{ toJSON(github.repository) }},"repositoryId":${{ toJSON(github.repository_id) }},"ownerId":${{ toJSON(github.repository_owner_id) }},"event":${{ toJSON(github.event_name) }},"sourceSha":${{ toJSON(github.sha) }},"requestedSourceSha":${{ toJSON(inputs.expected_source_sha) }},"eventBaseSha":${{ toJSON(github.event.pull_request.base.sha || github.event.merge_group.base_sha || '') }},"phase":${{ toJSON(vars.HISTORY_REDACTION_PHASE) }},"descriptorSha256":${{ toJSON(vars.HISTORY_REDACTION_DESCRIPTOR_SHA256) }}}
+            {"repository":${{ toJSON(github.repository) }},"repositoryId":${{ toJSON(github.repository_id) }},"ownerId":${{ toJSON(github.repository_owner_id) }},"event":${{ toJSON(github.event_name) }},"sourceSha":${{ toJSON(github.sha) }},"requestedSourceSha":${{ toJSON(inputs.expected_source_sha) }},"eventBaseSha":${{ toJSON(github.event.pull_request.base.sha || github.event.merge_group.base_sha || '') }},"phase":${{ toJSON(vars.HISTORY_REDACTION_PHASE) }},"descriptorSha256":${{ toJSON(vars.HISTORY_REDACTION_DESCRIPTOR_SHA256 || '') }}}
           HISTORY_DEFINITION: ${{ toJSON(job) }}
           HISTORY_DESCRIPTOR_B64: ${{ vars.HISTORY_REDACTION_DESCRIPTOR_B64 }}
         run: |
