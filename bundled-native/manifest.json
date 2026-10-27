@@ -1,0 +1,329 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "path": "scripts/access-census/ast.mjs",
+      "sha256": "978063e9e9fdbe6839a6c683a78490005428551c7ab30aa44a66d0d8846187d7",
+      "bytes": 6793,
+      "imports": [
+        "./parsed-inventory.mjs",
+        "typescript"
+      ]
+    },
+    {
+      "path": "scripts/access-census/discovery.mjs",
+      "sha256": "d9b33a955773e00d4b587711c7c92da17f13020061a07b79572fc22025d6c71d",
+      "bytes": 1634,
+      "imports": [
+        "./ast.mjs",
+        "./entries.mjs",
+        "./nest.mjs",
+        "./parsed-inventory.mjs"
+      ]
+    },
+    {
+      "path": "scripts/access-census/entries.mjs",
+      "sha256": "fbb62d8721eb2c53f42f24f1128c7e7a4857b3c790960bf8667943360f84f697",
+      "bytes": 5560,
+      "imports": [
+        "./ast.mjs"
+      ]
+    },
+    {
+      "path": "scripts/access-census/inventory.mjs",
+      "sha256": "55d09f6b34cb4408e95671673b4338efbfa4a38e83c2fc05497a0925536dce93",
+      "bytes": 19511,
+      "imports": [
+        "./ast.mjs",
+        "./discovery.mjs",
+        "node:child_process",
+        "node:crypto",
+        "node:fs",
+        "node:path",
+        "node:url"
+      ]
+    },
+    {
+      "path": "scripts/access-census/nest.mjs",
+      "sha256": "8530e24f0ab40e126b2cc2b0007252ee4aa8a669bde123f2159b4c1acb84ff97",
+      "bytes": 8514,
+      "imports": [
+        "./ast.mjs",
+        "node:path"
+      ]
+    },
+    {
+      "path": "scripts/access-census/parsed-inventory.mjs",
+      "sha256": "e009a2f2bc49459e1d83df2257f84b7b84d1ba594c941dcdb1b7b1fd1e0fa389",
+      "bytes": 4975,
+      "imports": [
+        "node:async_hooks",
+        "node:crypto",
+        "typescript"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/complete-occurrence-history.mjs",
+      "sha256": "1a9adcd97de3a7fca272439674a146112998dca736557b73105d4f348adc6151",
+      "bytes": 15664,
+      "imports": [
+        "./ledger-format.mjs",
+        "node:util"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/evolution-gate.mjs",
+      "sha256": "b7beca592e999a0ee06a9b25ac636cb6a550147e60b50040004c42cad88a8238",
+      "bytes": 17330,
+      "imports": [
+        "./history-revision-io.mjs",
+        "./ledger-format.mjs",
+        "./surface-history.mjs",
+        "node:child_process",
+        "node:crypto",
+        "node:fs",
+        "node:path",
+        "node:url"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/fixed-record-report-proof.mjs",
+      "sha256": "c008c0704efab27fcea2f6ffd61b1c20796c373ba0c77d28aa6cb86b472f8107",
+      "bytes": 67938,
+      "imports": [
+        "../access-census/ast.mjs",
+        "node:crypto",
+        "node:path"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/history-redaction-compact.mjs",
+      "sha256": "f6dc492cdf0a6118087aff78f0b5accb624f9bdb80b6a8ea69d72a26dddb37df",
+      "bytes": 45320,
+      "imports": [
+        "./history-redaction-git-io.mjs",
+        "./history-redaction-tree-arena.mjs",
+        "./ledger-format.mjs",
+        "node:crypto"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/history-redaction-git-io.mjs",
+      "sha256": "afd4f6495a2127bb7534db8c3633b7c90193fe8a0681136018ceba7f74635d82",
+      "bytes": 13643,
+      "imports": [
+        "node:child_process",
+        "node:crypto",
+        "node:fs",
+        "node:path"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/history-redaction-tree-arena.mjs",
+      "sha256": "b69f0254fcf1238066c91bca474c27654d947afa83dac905d4da119d872026eb",
+      "bytes": 5096,
+      "imports": [
+        "node:crypto"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/history-revision-io.mjs",
+      "sha256": "59d8d87def66e023437197312a880e27fee51433000f0c93a665427f827a51ff",
+      "bytes": 20349,
+      "imports": [
+        "./history-redaction-compact.mjs",
+        "./history-redaction-git-io.mjs",
+        "./history-redaction-tree-arena.mjs",
+        "node:crypto",
+        "node:fs",
+        "node:path"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/ledger-format.mjs",
+      "sha256": "0385f81d826e7f111373669c6519a422130174f9d0af83a54b057a2f6e624dac",
+      "bytes": 2868,
+      "imports": [
+        "node:crypto"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/linked-root-history.mjs",
+      "sha256": "86a526a18ae505ea8051f2e4e1359892b9ec619309e06803aeb2403ef774dd91",
+      "bytes": 16999,
+      "imports": [
+        "./ledger-format.mjs"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/prepare-history-git-parents.mjs",
+      "sha256": "c5099c5e2ef18b3fa83882c18fd065f5183513edcf1f0736370b5bbf211764aa",
+      "bytes": 16568,
+      "imports": [
+        "./history-revision-io.mjs",
+        "./ledger-format.mjs",
+        "node:child_process",
+        "node:path",
+        "node:perf_hooks",
+        "node:url"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/root-family-history.mjs",
+      "sha256": "df057fa5bec84a71dbec198e3501cd07c875c5e1e7e9e632e04ff53c222a03b5",
+      "bytes": 14470,
+      "imports": [
+        "./complete-occurrence-history.mjs",
+        "./ledger-format.mjs"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/source-head-continuation.mjs",
+      "sha256": "bd639447d10f0fe305ab0310c4882549f499136aa51ee3923f0901b3cbcb4a8e",
+      "bytes": 10517,
+      "imports": [
+        "./ledger-format.mjs",
+        "./source-head-selection.mjs"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/source-head-publisher.mjs",
+      "sha256": "e12ab3447a3c55010b338e423df6d7666e5465921f51e2577eec69c571fb1f26",
+      "bytes": 6561,
+      "imports": [
+        "../access-census/inventory.mjs",
+        "./ledger-format.mjs",
+        "./surface-gate.mjs",
+        "./surface-history.mjs",
+        "node:fs",
+        "node:path"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/source-head-selection.mjs",
+      "sha256": "ca957c795abe540f0000372f41cf1b692be93cacdc86eb6d9050dbb3c6752f29",
+      "bytes": 3351,
+      "imports": [
+        "./ledger-format.mjs"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/structural-catchup-history.mjs",
+      "sha256": "0d768e7152eae3c4b7af692564c4310d5e6ebe47318520782507acdb82c0a323",
+      "bytes": 11889,
+      "imports": [
+        "./ledger-format.mjs",
+        "./source-head-continuation.mjs",
+        "./source-head-selection.mjs",
+        "./structural-merge-history.mjs",
+        "node:crypto"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/structural-composition-history.mjs",
+      "sha256": "f33576412e2158eec1f7e3e1238941ea0afedb16a4a1379576539352a71fc05a",
+      "bytes": 9129,
+      "imports": [
+        "./ledger-format.mjs",
+        "./source-head-continuation.mjs",
+        "./source-head-selection.mjs",
+        "./structural-merge-history.mjs",
+        "node:crypto"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/structural-merge-history.mjs",
+      "sha256": "a0f89fd348c4af6bec04fa8039cca277a01741dd433eb82b7c847023fcc95ede",
+      "bytes": 12225,
+      "imports": [
+        "./ledger-format.mjs",
+        "./source-head-continuation.mjs",
+        "./source-head-selection.mjs",
+        "node:crypto"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/structural-origin-continuation.mjs",
+      "sha256": "35e4ddd283f61d39d82fa9d0a8705c157dab5cd52792a96799a9e8b4f4ca4318",
+      "bytes": 12182,
+      "imports": [
+        "./ledger-format.mjs",
+        "./source-head-continuation.mjs",
+        "./source-head-selection.mjs",
+        "./structural-merge-history.mjs",
+        "node:crypto"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/structural-tail-composition-history.mjs",
+      "sha256": "6ac2cc1a38d00b67166a3c62e03727a7d1f5c9a902c3f0040959ab02283e2fa7",
+      "bytes": 10048,
+      "imports": [
+        "./ledger-format.mjs",
+        "./source-head-continuation.mjs",
+        "./source-head-selection.mjs",
+        "./structural-catchup-history.mjs",
+        "./structural-merge-history.mjs",
+        "node:crypto"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/surface-gate.mjs",
+      "sha256": "9dc65eecfca1c58d44084e350ff87e3b5637d5533e23c0f7ba75be883d01fdf1",
+      "bytes": 159798,
+      "imports": [
+        "../access-census/ast.mjs",
+        "../access-census/discovery.mjs",
+        "../access-census/inventory.mjs",
+        "../access-census/parsed-inventory.mjs",
+        "./evolution-gate.mjs",
+        "./fixed-record-report-proof.mjs",
+        "./ledger-format.mjs",
+        "./source-head-publisher.mjs",
+        "./surface-history.mjs",
+        "node:crypto",
+        "node:fs",
+        "node:path",
+        "node:url"
+      ]
+    },
+    {
+      "path": "scripts/permission-registry/surface-history.mjs",
+      "sha256": "857547a4cb869f08c50e5b4d104064143baa57ca133c9a46212c8bd62c72d004",
+      "bytes": 129120,
+      "imports": [
+        "../access-census/inventory.mjs",
+        "./complete-occurrence-history.mjs",
+        "./history-revision-io.mjs",
+        "./ledger-format.mjs",
+        "./linked-root-history.mjs",
+        "./root-family-history.mjs",
+        "./source-head-continuation.mjs",
+        "./source-head-selection.mjs",
+        "./structural-catchup-history.mjs",
+        "./structural-composition-history.mjs",
+        "./structural-merge-history.mjs",
+        "./structural-origin-continuation.mjs",
+        "./structural-tail-composition-history.mjs",
+        "./surface-gate.mjs",
+        "node:child_process",
+        "node:crypto",
+        "node:fs",
+        "node:path"
+      ]
+    }
+  ],
+  "external": [
+    "node:async_hooks",
+    "node:child_process",
+    "node:crypto",
+    "node:fs",
+    "node:path",
+    "node:perf_hooks",
+    "node:url",
+    "node:util",
+    "typescript"
+  ],
+  "count": 27,
+  "totalBytes": 648052
+}

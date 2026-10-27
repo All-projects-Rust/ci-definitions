@@ -1,0 +1,12 @@
+{
+  "name": "signalo-trusted-history-verifier",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "typescript": "5.9.3"
+  }
+}
